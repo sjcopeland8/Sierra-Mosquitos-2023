@@ -1,0 +1,45 @@
+---
+title: "data summary"
+author: "Stephanie Copeland"
+date: "2023-10-10"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Packages
+```{r}
+library(here)
+library(tidyverse)
+library(ggplot2)
+```
+##Read in csv file
+###information
+*put information on csv file here*
+```{r}
+sampler_mos_counts <- read_csv(
+  here::here("Data/sampler_mos_counts.csv"))
+```
+
+#### look at characteristics of current data set
+```{r}
+class(sampler_mos_counts)
+#dataframe
+head(sampler_mos_counts)
+#sampler - character
+#Lake - character
+#Date - character
+#Time_start - time
+#Time_end = time
+#Total_time - numeric
+#snow_melt_mosq - numeric
+#black_mosq - numeric
+#culiseta - numneric
+#culex_tarsalis - numeric
+#blood_test - numeric 
+```
+
+This is ok. I would like to clean column names and change the 'Date' column characterization from character to date
+
+
