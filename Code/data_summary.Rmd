@@ -30,24 +30,24 @@ class(sampler_mos_counts)
 head(sampler_mos_counts)
 ```
 
-sampler - character: Initial ID of which researcher was sampling
-SC = Steph Copeland (project lead)
-MR = Matthew Rosen (undergraduate techician)
-SL = Sylvia Li (undergraduate technician)
-ST = Sachi Takishima (volunteer)
-CC = Charlie Copeland (volunteer, Steph's dad)
-KK = Kayla Kauffman (volunteer)
-also present for all sampling endeavors but not a sampler was Hugo, Steph's service dog. He is a 70lbs German Shepherd Mix 
-Lake - character: name of lake which collections were taken. Heart, Hidden, Flower, No_Name, Gilbert, Matlock, Marsh, LEB (Lower Eastern Brook), Little_Fish, Little_Lakes, Mack, EB (Eastern Brook)
-Date - character: changed to date class (see below) date at which sampling occurred
-Time_start - time: time that sampling began
-Time_end = time: time that sampling commenced
-Total_time - numeric: the amount of minutes sampled, calculated by determining the number of minutes that had passed between Time_start and Time_end
-snow_melt_mosq - numeric: count of caught mosquitos falling into this phenotypic category
-black_mosq - numeric: count of caught mosquitos falling into this phenotypic category
-culiseta - numneric: count of mosquitos falling into this genera 
-culex_tarsalis - numeric: count of caught mosquitos falling into this species 
-blood_test - numeric: number of mosquitos removed from each sampling effort to test for the content of a blood meal. These samples were inherently destroyed by puncturing the abdomen of the sample with a burn/sterile pipette tip 
+- sampler - character: Initial ID of which researcher was sampling
+- SC = Steph Copeland (project lead)
+- MR = Matthew Rosen (undergraduate techician)
+- SL = Sylvia Li (undergraduate technician)
+- ST = Sachi Takishima (volunteer)
+- CC = Charlie Copeland (volunteer, Steph's dad)
+- KK = Kayla Kauffman (volunteer)
+- also present for all sampling endeavors but not a sampler was Hugo, Steph's service dog. He is a 70lbs German Shepherd Mix 
+- Lake - character: name of lake which collections were taken. Heart, Hidden, Flower, No_Name, Gilbert, Matlock, Marsh, LEB (Lower Eastern Brook), Little_Fish, Little_Lakes, Mack, EB (Eastern Brook)
+- Date - character: changed to date class (see below) date at which sampling occurred
+- Time_start - time: time that sampling began
+- Time_end = time: time that sampling commenced
+- Total_time - numeric: the amount of minutes sampled, calculated by determining the number of minutes that had passed between Time_start and Time_end
+- snow_melt_mosq - numeric: count of caught mosquitos falling into this phenotypic category
+- black_mosq - numeric: count of caught mosquitos falling into this phenotypic category
+- culiseta - numneric: count of mosquitos falling into this genera 
+- culex_tarsalis - numeric: count of caught mosquitos falling into this species 
+- blood_test - numeric: number of mosquitos removed from each sampling effort to test for the content of a blood meal. These samples were inherently destroyed by puncturing the abdomen of the sample with a burn/sterile pipette tip 
 
 This is ok. I would like to clean column names and change the 'Date' column characterization from character to date
 
@@ -85,4 +85,33 @@ sampler_mos_counts$date <- as.Date(sampler_mos_counts$date, format = "%d %b %Y")
 
 #### Data set rearranging
 Eventually, I would like to investigate the affects of sampler and time during day when sampled on mosquito counts. However, for right now. I would like to simplify the data to get some visual summary results. To do this I will create a new df with this data called 'summ_mos_counts'
+
+```{r, I know this technically isnt in tidy format but I separate my code in a step-wise process. Other are welcome to combine this}
+summ_mos_counts <- sampler_mos_counts %>% 
+  select(-time_start, -time_end, -sampler)
+
+summ_mos_counts <- summ_mos_counts %>% 
+  group_by(lake, date) %>% 
+  summarise(
+    time_min = sum(total_time),
+    total_snow_melt_mosq = sum(snow_melt_mosq),
+    total_black_mosq = sum(black_mosq),
+    total_culiseta = sum(culiseta, na.rm = TRUE),
+    total_culex_tarsalis = sum(culex_tarsalis),
+    total_blood_test = sum(blood_test, na.rm = TRUE)
+  )
+
+summ_mos_counts <- summ_mos_counts %>% 
+  mutate(total_sum = total_snow_melt_mosq + 
+           total_black_mosq +
+           total_culiseta +
+           total_culex_tarsalis +
+           total_blood_test)
+
+summ_mos_counts <- summ_mos_counts %>% 
+  mutate(effort_min = total_sum/time_min)
+summ_mos_counts$effort_min <- round(summ_mos_counts$effort_min, 1)
+```
+Describe resulting data set here 
+
 
