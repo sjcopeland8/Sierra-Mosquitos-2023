@@ -113,5 +113,114 @@ summ_mos_counts <- summ_mos_counts %>%
 summ_mos_counts$effort_min <- round(summ_mos_counts$effort_min, 1)
 ```
 Describe resulting data set here 
+added two additional columns and changed NAs to zeros in column total_blood_test
+total_sum is the column adding all mosquitos across the phenotype groups and those destroyed for blood meal sampling through each row
+effort/min is the column taking the total_sum column and dividing it by the time_min column for each row. This gets mosquitos caught per minute on the date the lakes were sampled
 
+I actually also want to add a column to the df that notes 'fish' or 'no fish' 
+```{r}
+summ_mos_counts <- summ_mos_counts %>% 
+  mutate(fish_status = case_when(
+    lake %in% c("EB", "Hidden", "LEB", "Little_Lakes", "Matlock", "No_Name") ~ "no_fish",
+    TRUE ~ "fish"
+  ))
+```
+
+Average effort by lake
+```{r}
+avg_effort <- summ_mos_counts %>% 
+  group_by(lake) %>% 
+  summarise(avg_effort = mean(effort_min, na.rm = TRUE))
+```
+
+```{r}
+ggplot(avg_effort, aes(x = lake, y = avg_effort))+
+  geom_bar(stat = "identity", fill = "blue")+
+  labs(title = "Effort by Lake", x = "Lake", y = "Effort (min)")+
+  theme_minimal()
+```
+
+```{r}
+avg_effort <- avg_effort %>% 
+  mutate(fish_status = case_when(
+    lake %in% c("EB", "Hidden", "LEB", "Little_Lakes", "Matlock", "No_Name") ~ "no_fish",
+    TRUE ~ "fish"
+  ))
+
+ggplot(avg_effort, aes(x = lake, y = avg_effort, fill = fish_status))+
+  geom_bar(stat = "identity")+
+  labs(title = "Effort by Lake", x = "Lake", y = "Effort (min)")+
+  theme_minimal()
+```
+
+standard error
+```{r}
+stan_error <- summ_mos_counts %>% 
+  group_by(lake) %>% 
+  summarize(standard_error = sd(effort_min) / sqrt (n()))
+```
+
+graph with error bars
+```{r}
+combo_avg_error <- merge(avg_effort, stan_error, by = "lake")
+
+ggplot(combo_avg_error, aes(x = lake, y = avg_effort, fill = fish_status))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.6)+
+  geom_errorbar(aes(ymin = avg_effort - standard_error, ymax = avg_effort + standard_error),
+                position = position_dodge(width = 0.8),
+                width = 0.3)+
+  labs(title = "Average Effort by Lake", x = "Lake", y = "Average Effort")+
+  theme_minimal()
+```
+
+graph with lakes in their "pairs"
+```{r}
+combo_avg_error$lake <- factor(combo_avg_error$lake, levels = c('EB', 'Mack', 'LEB', 'Marsh', 'Hidden', 'Heart', 'Little_Lakes', 'Little_Fish', 'Matlock', 'Flower', 'No_Name', 'Gilbert'))
+
+ggplot(combo_avg_error, aes(x = lake, y = avg_effort, fill = fish_status))+
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.6)+
+  geom_errorbar(aes(ymin = avg_effort - standard_error, ymax = avg_effort + standard_error),
+                position = position_dodge(width = 0.8),
+                width = 0.3)+
+  labs(title = "Effort by Lake", x = "Lake", y = "Average Effort (mosquito/min)")+
+  theme_minimal()
+```
+
+box plot - thanks Charlie for helping me come up with the ideas! 
+
+```{r, each lake separate box plot}
+ggplot(summ_mos_counts, aes(x = fish_status, y = effort_min, color = lake)) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.8)) +
+  geom_point(position = position_dodge(width = 0.8), alpha = 0.7, size = 3) +
+  labs(title = "Mosquito/Min by Fish Status", x = "Fish Status", y = "Effort (Mosquito/Min)") +
+  theme_minimal()
+```
+
+
+```{r, two boxplots with position_jitterdodge, colored by lakes}
+ggplot(summ_mos_counts, aes(x = fish_status, y = effort_min)) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.8)) +
+  geom_point(aes(color = lake), position = position_jitterdodge(seed = 12), alpha = 0.7, size = 3) +
+  labs(title = "Mosquito/Min by Fish Status", x = "Fish Status", y = "Effort (Mosquito/Min)") +
+  theme_minimal()
+```
+
+
+```{r, two box plots with points colored by lakes}
+ggplot(summ_mos_counts, aes(x = fish_status, y = effort_min)) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.8)) +
+  geom_point(aes(color = lake), position = position_dodge(width = 0.8), alpha = 0.7, size = 3) +
+  labs(title = "Mosquito/Min by Fish Status", x = "Fish Status", y = "Effort (Mosquito/Min)") +
+  scale_color_manual(values = c("EB" = "blue", "Flower" = "#58593F", "Gilbert" = "red", "Heart" = "purple", "Mack" = "#155F83FF", "LEB" = "orange", "Marsh" = "magenta", "Hidden" = "pink", "Little_Lakes" = "gray", "Little_Fish" = "#4DAC26", "Matlock" = "#DFC27D", "No_Name" = "#D01C8B")) +
+  theme_minimal()
+```
+
+```{r}
+ggplot(summ_mos_counts, aes(x = fish_status, y = effort_min)) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width = 0.8)) +
+  geom_point(aes(color = lake), position = position_jitterdodge(seed = 12), alpha = 0.7, size = 3) +
+  labs(title = "Mosquito/Min by Fish Status", x = "Fish Status", y = "Effort (Mosquito/Min)") +
+  scale_color_manual(values = c("EB" = "blue", "Flower" = "#58593F", "Gilbert" = "red", "Heart" = "purple", "Mack" = "#155F83FF", "LEB" = "orange", "Marsh" = "magenta", "Hidden" = "pink", "Little_Lakes" = "gray", "Little_Fish" = "#4DAC26", "Matlock" = "#DFC27D", "No_Name" = "#D01C8B")) +
+  theme_minimal()
+```
 
