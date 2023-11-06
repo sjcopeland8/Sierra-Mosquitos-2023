@@ -13,6 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(here)
 library(tidyverse)
 library(ggplot2)
+library(lubridate)
 ```
 ##Read in csv file
 ###information
@@ -56,31 +57,16 @@ sampler_mos_counts <- sampler_mos_counts %>%
   janitor::clean_names()
 #now all lower case column names
 
-sampler_mos_counts$date <- gsub("-", " ", sampler_mos_counts$date)
-#date data was initially recorded as, for example, "4-Jul or 22-Aug", this removed the dash. 
+sampler_mos_counts$date <- gsub("(\\b\\d{1}\\b)", "0\\1", sampler_mos_counts$date)
 
-addLeadingZeros <- function(x) {
-  parts <- strsplit(x, " ")
-  days <- sapply(parts, function(part) {
-    if (nchar(part[1]) == 1) {
-      sprintf("%02d", as.numeric(part[1]))
-    } else {
-      part[1]
-    }
-  })
-  paste(days, parts[[1]][2])
-}
+sampler_mos_counts$date <- gsub("-", "", sampler_mos_counts$date)
 
-sampler_mos_counts$date <- addLeadingZeros(sampler_mos_counts$date)
-#created a function to add a 0 to any single digit date entry. For example an entry of "4-Jul" was changed to "04=Jul".
+sampler_mos_counts$date <- gsub("Jul", "07", sampler_mos_counts$date)
+sampler_mos_counts$date <- gsub("Aug", "08", sampler_mos_counts$date)
 
-year <- 2023
+sampler_mos_counts$date <- paste(sampler_mos_counts$date, "2023", sep = "")
 
-sampler_mos_counts$date <- paste0(sampler_mos_counts$date, " ", year)
-#added the year 2023 to each data entry in the date column. Column is still recognized as a character column. 
-
-sampler_mos_counts$date <- as.Date(sampler_mos_counts$date, format = "%d %b %Y")
-#changed date to a date column
+sampler_mos_counts$date <- as.Date(sampler_mos_counts$date, format = "%d%m%Y")
 ```
 
 #### Data set rearranging
@@ -110,6 +96,7 @@ summ_mos_counts <- summ_mos_counts %>%
 
 summ_mos_counts <- summ_mos_counts %>% 
   mutate(effort_min = total_sum/time_min)
+
 summ_mos_counts$effort_min <- round(summ_mos_counts$effort_min, 1)
 ```
 Describe resulting data set here 
@@ -222,5 +209,32 @@ ggplot(summ_mos_counts, aes(x = fish_status, y = effort_min)) +
   labs(title = "Mosquito/Min by Fish Status", x = "Fish Status", y = "Effort (Mosquito/Min)") +
   scale_color_manual(values = c("EB" = "blue", "Flower" = "#58593F", "Gilbert" = "red", "Heart" = "purple", "Mack" = "#155F83FF", "LEB" = "orange", "Marsh" = "magenta", "Hidden" = "pink", "Little_Lakes" = "gray", "Little_Fish" = "#4DAC26", "Matlock" = "#DFC27D", "No_Name" = "#D01C8B")) +
   theme_minimal()
+```
+
+some analysis by the date
+
+```{r, all lakes on the same graph}
+ggplot(summ_mos_counts, aes(x = date, y = effort_min, color = lake)) +
+  geom_line() +
+  labs(title = "Effort by Date", x = "Date", y = "Effort (minutes)") +
+  theme_minimal()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r, lakes on separate graphs}
+ggplot(summ_mos_counts, aes(x = date, y = effort_min)) +
+  geom_line() +
+  labs(title = "Effort by Date", x = "Date", y = "Effort (minutes)") +
+  theme_minimal() +
+  facet_wrap(~lake)+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r, all lakes on same graph points not lines}
+ggplot(summ_mos_counts, aes(x = date, y = effort_min, color = lake)) +
+  geom_point() +
+  labs(title = "Effort by Date", x = "Date", y = "Effort (minutes)") +
+  theme_minimal() +
+  facet_wrap(~lake)
 ```
 
